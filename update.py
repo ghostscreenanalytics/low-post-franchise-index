@@ -71,13 +71,16 @@ for y in years:
                 o = cells(tr); o["tm"] = m.group(1) if m else ""; o["year"] = y; st.append(o)
     wins = sum(float(o.get("wins") or 0) for o in tm if o.get("team") != "League Average")
     if wins == 0: print("  season has no games yet, skipping"); continue
-    d = get(f"/playoffs/NBA_{y}.html"); po = []
-    t = d.select_one("table#all_playoffs")
+    po = []
+    try: d = get(f"/playoffs/NBA_{y}.html")
+    except Exception as e: print("  no playoffs page yet:", e); d = None
+    t = d.select_one("table#all_playoffs") if d else None
     if t:
         for tr in t.select("tbody tr"):
             po.append({"year": y, "txt": re.sub(r"\s+", " ", tr.get_text(" ", strip=True)), "links": " ".join(a.get("href", "") for a in tr.select("a"))})
-    d = get(f"/leagues/NBA_{y}_transactions.html")
-    for p in d.select("#content p"):
+    try: d = get(f"/leagues/NBA_{y}_transactions.html")
+    except Exception as e: print("  no transactions page yet:", e); d = None
+    for p in (d.select("#content p") if d else []):
         txt = re.sub(r"\s+", " ", p.get_text(" ", strip=True))
         if len(txt) >= 12: new_tx.append({"y": y, "txt": txt, "links": " ".join(a.get("href", "") for a in p.select("a"))})
     for k, v in [("pl", pl), ("tm", tm), ("st", st), ("po", po)]: new[k] += v
